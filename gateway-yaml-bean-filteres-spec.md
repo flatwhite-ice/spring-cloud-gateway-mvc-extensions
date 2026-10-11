@@ -182,24 +182,25 @@ import 하는 곳은 없다. 프레임워크는 `ObjectProvider<BeanAliasFilterS
 
 ---
 
-## 7. 구버전 참고 (검증하지 않음)
+## 7. 구버전 — 4.3.0 이 분기점
 
-이 저장소는 5.0.3 이 핀되어 있어 아래는 확인할 수 없다. 옮겨 쓰기 전에 해당 버전에서 직접 확인할 것.
+Maven Central 의 과거 jar 로 확인했다. `@GatewayFilterBean` 방식은 **4.3.0 이상에서만** 가능하다.
 
-`FilterBeanFactoryDiscoverer` 와 `BeanFactoryGatewayDiscoverer` 가 없던 버전에서는
-`AbstractGatewayDiscoverer.loadSuppliers()` 가 `SpringFactoriesLoader` 만 쓴다. 대체할 빈도 없고
-`FilterSupplier` 를 `@Bean` 으로 등록해도 수집되지 않으므로 `@GatewayFilterBean` 방식을 쓸 수 없고,
-수동 별칭 경로만 남으며 등록은 `META-INF/spring.factories` 로 한다. `SpringFactoriesLoader` 는
-무인자 생성자를 요구하므로 서브클래스를 하나 둬야 한다.
+- `BeanFactoryGatewayDiscoverer`, `FilterBeanFactoryDiscoverer`, `FilterAutoConfiguration` 이 전부
+  **4.3.0 에서 신규 등장**한다. 4.1.0~4.2.7 에는 없다.
+- ≤ 4.2.7 의 `AbstractGatewayDiscoverer.loadSuppliers()` 는 `SpringFactoriesLoader` 만 쓰고,
+  built-in `FilterSupplier` 5개도 `META-INF/spring.factories` 에 등록돼 있다. 4.3.0 에서 그 항목이
+  0개가 되고 전부 `@Bean` 으로 옮겨졌다.
+- 결정적으로 ≤ 4.2.7 의 `RouterFunctionHolderFactory` 는
+  `private final FilterDiscoverer filterDiscoverer = new FilterDiscoverer();` 로 필드에서 직접
+  생성하고 생성자는 `Environment` 만 받는다. **교체 지점이 없으므로** operations 맵의 키를 빈 이름으로
+  바꿀 수 없다 — §3 의 설계가 원리적으로 불가능하다.
 
-```
-org.springframework.cloud.gateway.server.mvc.filter.FilterSupplier=\
-  com.example.gateway.routing.filter.GatewayArgsFilterAliasSupplier
-```
+≤ 4.2.x 로 옮겨야 한다면 수동 별칭 경로를 모든 필터에 쓰고 spring.factories 로 등록한다. 자세한
+대응과 그때 포기하게 되는 것은 [README의 구버전 절](README.md#구버전--430-이-분기점이다)에 있다.
 
-설정 prefix 가 `spring.cloud.gateway.mvc` 였던 버전도 있다.
-
----
+아티팩트는 `spring-cloud-gateway-server-mvc`(4.1.0~4.3.5) → `spring-cloud-gateway-server-webmvc`
+(5.0.0+) 로 이동했다. 4.3.x 의 `-server-webmvc` 는 3KB 전환용 아티팩트다.
 
 ## 8. 참고 문서
 

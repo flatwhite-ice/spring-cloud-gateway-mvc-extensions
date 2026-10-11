@@ -4,6 +4,22 @@ server:
 spring:
   application:
     name: gateway-mvc-extensions
+  threads:
+    virtual:
+      enabled: true
+  # Outbound proxy timeouts. These matter more with virtual threads on: the servlet thread pool
+  # no longer caps concurrency, so a slow downstream would pile up requests instead of being
+  # rejected by a full pool. Gateway 5.0.3 has no timeout properties of its own; Boot applies
+  # these to the JDK HttpClient it proxies with.
+  #
+  # read-timeout is a TOTAL deadline for the exchange, not just the wait for the response to
+  # start: it maps to HttpRequest.Builder#timeout, so a body still streaming at 5s is cut off
+  # and the caller gets a 500. Raise it (or set it per route) before serving large downloads or
+  # SSE from here. ProxyTimeoutTests pins both halves of that behaviour down.
+  http:
+    clients:
+      connect-timeout: 2s
+      read-timeout: 5s
   cloud:
     gateway:
       server:

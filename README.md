@@ -497,16 +497,44 @@ Java 25를 포기해도 된다면 toolchain을 21로 내리고 Kotlin 2.2.21을 
 `spring-boot-configuration-processor`는 빠져 있다. KSP를 지원하지 않고 kapt는 deprecated이므로,
 `GatewayFilterProperties`는 IDE 자동완성 메타데이터 없이 동작한다.
 
-### 구버전 참고 (이 저장소에서 검증하지 않음)
+### 구버전 — 4.3.0 이 분기점이다
 
-아래는 5.0.3 이 핀된 이 저장소에서 확인할 수 없는 내용이므로, 옮겨 쓰기 전에 해당 버전에서 직접
-확인할 것.
+`@GatewayFilterBean` 방식은 **Gateway 4.3.0 이상에서만** 가능하다. Maven Central 의 과거 jar 를
+받아 직접 확인했다.
 
-`FilterBeanFactoryDiscoverer`와 `BeanFactoryGatewayDiscoverer`가 없던 버전에서는
-`AbstractGatewayDiscoverer.loadSuppliers()`가 `SpringFactoriesLoader`만 쓰므로, 대체할 빈도 없고
-`FilterSupplier`를 `@Bean`으로 등록해도 수집되지 않는다 — 즉 `@GatewayFilterBean` 방식을 쓸 수
-없고 수동 별칭 경로만 남으며, 등록은 `gateway/src/main/resources/META-INF/spring.factories`로 한다.
-`SpringFactoriesLoader`는 무인자 생성자를 요구하므로 서브클래스를 하나 둬야 한다.
+| | ≤ 4.2.7 | 4.3.0 이상 |
+| --- | --- | --- |
+| `AbstractGatewayDiscoverer.loadSuppliers()` | `SpringFactoriesLoader.loadFactories()` 만 | `BeanFactoryGatewayDiscoverer` 가 재정의 → `beanFactory.getBeanProvider()` |
+| `BeanFactoryGatewayDiscoverer` / `FilterBeanFactoryDiscoverer` | **없음** | 신규 |
+| `FilterAutoConfiguration` | **없음** | 신규 |
+| built-in `FilterSupplier` 등록 | `META-INF/spring.factories` 에 5개 | 전부 `@Bean`, spring.factories 항목 0개 |
+| discoverer 교체 지점 | **없음** | `@Bean` 이므로 `@Primary` 로 이긴다 |
+
+결정적인 것은 마지막 줄이다. 4.2.7 의 `RouterFunctionHolderFactory` 는 discoverer 를 필드에서
+직접 생성하고 생성자는 `Environment` 하나만 받는다.
+
+```java
+private final FilterDiscoverer filterDiscoverer = new FilterDiscoverer();   // 4.2.7
+```
+
+주입 지점도, 빈도, setter 도 없다. 따라서 operations 맵의 키를 빈 이름으로 바꿀 방법이 **원리적으로
+없다** — 불편한 게 아니라 불가능하다. 그 버전에서 YAML 이름은 **반드시 static 메서드 이름**이다.
+
+**그래서 ≤ 4.2.x 에서는 이렇게 구현해야 한다.** 이 프로젝트의 "수동 별칭" 경로를 (인자를 받는
+필터만이 아니라) **모든 필터에** 적용하면 된다. 다음은 그 버전에서도 그대로 성립한다:
+
+- `MvcUtils.getApplicationContext(ServerRequest)` 가 4.2.7 에 이미 있다 → `BeanDelegatingFilter` 의
+  빈 위임 트릭이 동작하므로 **필터의 생성자 주입은 그대로 쓸 수 있다**
+- `SimpleFilterSupplier` 는 구현이 동일하다 (`getMethods()`)
+- 이름 정규화도 `StringUtils.uncapitalize` 로 동일하다
+
+포기해야 하는 것은 두 가지다. 별칭 메서드 이름을 인터페이스로 고정할 수 없으니 **컴파일러 강제가
+사라지고**(YAML 이름 = 메서드 이름이므로), `GatewayFilterValidator` 의 `ObjectProvider<FilterSupplier>`
+기반 수집도 못 쓴다 — 공급자가 빈이 아니라 spring.factories 로 로드되므로 검증기도
+`SpringFactoriesLoader` 로 바꿔야 한다.
+
+등록은 `gateway/src/main/resources/META-INF/spring.factories` 로 하고, `SpringFactoriesLoader` 가
+무인자 생성자를 요구하므로 서브클래스를 하나 둔다.
 
 ```kotlin
 class GatewayArgsFilterAliasSupplier : BeanAliasFilterSupplier(GatewayArgsFilterAliases::class.java)
@@ -516,7 +544,10 @@ org.springframework.cloud.gateway.server.mvc.filter.FilterSupplier=\
   com.example.gateway.routing.filter.GatewayArgsFilterAliasSupplier
 ```
 
-설정 prefix 가 `spring.cloud.gateway.mvc`였던 버전도 있다.
+아티팩트 이름도 함께 바뀌었다. Server MVC 스택은 `spring-cloud-gateway-server-mvc`(4.1.0~4.3.5)
+였고 5.0.0 에서 `spring-cloud-gateway-server-webmvc` 로 옮겨졌다. 4.3.x 의
+`spring-cloud-gateway-server-webmvc` 는 3KB 짜리 전환용 아티팩트이므로 코드는 여전히
+`-server-mvc` 쪽에 있다. 설정 prefix 가 `spring.cloud.gateway.mvc` 였던 버전도 있다(2024.0 이하).
 
 ## 테스트
 
@@ -529,6 +560,7 @@ org.springframework.cloud.gateway.server.mvc.filter.FilterSupplier=\
 | `ParameterizedAliasTests` | 수동 별칭 + 팩토리 빈으로 라우트별 `args` 가 동작 (`javaParameters` 전제 포함) |
 | `DiscovererReplacementTests` | `@Primary` 가 타입 기반 주입을 이기는지, 어노테이션·수동 별칭·built-in 이 operations 맵에 공존하는지 — 게이트웨이 업그레이드 가드 |
 | `GatewayFilterErrorHandlingTests` | 예외를 던지는 필터: `GatewayException` 렌더링 / `ResponseStatusException` 상태 유지 / selector 걸린 advice 미적용 / 라우트 없는 404 도 같은 바디 |
+| `ProxyTimeoutTests` | `spring.http.clients.read-timeout` 이 프록시 클라이언트까지 도달하는지 / 그 값이 **전체 교환 데드라인**이라 스트리밍 중인 바디도 잘린다는 점 (가상 스레드로 스레드풀 백프레셔가 사라진 상태의 유일한 상한) |
 | `StartupFailureTests` | 별칭 누락 / `@JvmStatic` 누락 / 필터가 아님 / 별칭 타깃 불일치 / 이름 충돌(어노테이션·수동 양쪽) / 수동 별칭 dangling·non-static / YAML 오타 / **라우트 0개일 때도 검증됨** |
 
 자동 테스트(`./gradlew :gateway:test`)의 다운스트림 스텁은 WireMock이고, 테스트 JVM 전체에서 하나를 공유한다
