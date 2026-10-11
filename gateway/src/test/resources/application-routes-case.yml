@@ -1,0 +1,24 @@
+# Routes used by AliasNameMatchingTests: the gateway uncapitalizes the YAML filter name
+# before looking it up, so `AuthFilter` has to resolve to authFilter() just like
+# `authFilter` does.
+spring:
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: capitalized
+              uri: ${downstream.url}
+              predicates:
+                - Path=/capitalized/**
+              filters:
+                - name: AuthFilter
+                - name: TenantFilter
+
+            - id: uncapitalized
+              uri: ${downstream.url}
+              predicates:
+                - Path=/uncapitalized/**
+              filters:
+                - name: authFilter
+                - name: tenantFilter

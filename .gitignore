@@ -1,0 +1,89 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+.gradletasknamecache
+gradle-app.setting
+
+# Kotlin
+.kotlin/
+
+# Compiled output
+*.class
+out/
+bin/
+
+# Spring Boot — local overrides, often hold credentials
+application-secret*.yml
+application-secret*.properties
+.env
+.env.*
+
+# Claude Code — session transcripts, memory and local agent state.
+# Default-deny inside .claude/ so state files added by future versions are ignored
+# automatically; shared project config is re-included below. A CLAUDE.md at the repo
+# root is documentation and stays tracked.
+.claude/*
+!.claude/settings.json
+!.claude/agents/
+!.claude/commands/
+!.claude/hooks/
+!.claude/skills/
+
+# Session transcripts are UUID-named .jsonl. Ignore them wherever they land, not just
+# under .claude/ — one turned up in the repo root inside a directory named " ".
+[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f]-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].jsonl
+
+# Logs
+*.log
+logs/
+
+# JVM crash and profiling output
+hs_err_pid*.log
+replay_pid*.log
+*.hprof
+core.*
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Eclipse / Spring Tool Suite
+.settings/
+.classpath
+.project
+.apt_generated/
+.apt_generated_test/
+.factorypath
+.springBeans
+.sts4-cache/
+
+# VS Code
+.vscode/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# OS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+Desktop.ini
+
+# Editor scratch and merge leftovers
+*~
+*.swp
+*.swo
+*.bak
+*.tmp
+*.orig
+*.rej

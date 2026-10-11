@@ -1,0 +1,8 @@
+# No routes at all: the discoverer is never asked, so the startup checks have to come from
+# GatewayFilterValidator instead. StartupFailureTests covers that path.
+spring:
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes: []

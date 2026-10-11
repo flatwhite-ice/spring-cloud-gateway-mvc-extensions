@@ -1,0 +1,19 @@
+# Routes used by BuiltInFilterRegressionTests: nothing but built-in filters, to prove our
+# FilterSupplier bean does not shadow or displace them.
+spring:
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: builtin
+              uri: ${downstream.url}
+              predicates:
+                - Path=/builtin/**
+              filters:
+                - StripPrefix=1
+                - AddRequestHeader=X-Built-In,yes
+                - name: AddRequestHeader
+                  args:
+                    name: X-Built-In-Long-Form
+                    values: "yes"

@@ -1,0 +1,20 @@
+# Matches the gateway's `downstream.url` default (http://localhost:8081) in
+# ../gateway/src/main/resources/application.yml.
+server:
+  port: 8081
+
+spring:
+  application:
+    name: downstream-dummy
+
+logging:
+  level:
+    com.example.downstream: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level %logger{1} : %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

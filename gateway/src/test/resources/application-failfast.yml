@@ -1,0 +1,13 @@
+# Routes for StartupFailureTests. The framework-only test apps have none of the sample filter
+# beans, so they cannot use the routes in the main application.yml; this route exercises route
+# building (and therefore the discoverer) without naming any filter.
+spring:
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: failfast
+              uri: http://localhost:1
+              predicates:
+                - Path=/failfast/**

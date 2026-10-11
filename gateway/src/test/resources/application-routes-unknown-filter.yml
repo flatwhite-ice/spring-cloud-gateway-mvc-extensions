@@ -1,0 +1,13 @@
+# Routes used by StartupFailureTests: references a filter nobody registered.
+spring:
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: broken
+              uri: http://localhost:1
+              predicates:
+                - Path=/broken/**
+              filters:
+                - name: noSuchFilter

@@ -1,0 +1,28 @@
+# Routes for GatewayFilterErrorHandlingTests. Each filter signals its failure by throwing rather
+# than by returning a short-circuit ServerResponse.
+spring:
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: custom-exception
+              uri: ${downstream.url}
+              predicates:
+                - Path=/custom-exception/**
+              filters:
+                - name: throwingAuthFilter
+
+            - id: response-status-exception
+              uri: ${downstream.url}
+              predicates:
+                - Path=/response-status-exception/**
+              filters:
+                - name: paymentRequiredFilter
+
+            - id: scoped-advice
+              uri: ${downstream.url}
+              predicates:
+                - Path=/scoped-advice/**
+              filters:
+                - name: scopedAdviceFilter

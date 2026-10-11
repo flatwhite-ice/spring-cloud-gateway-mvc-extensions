@@ -1,0 +1,26 @@
+# Routes used by RouteFilterIntegrationTests and ModifyRequestBodyDelegationTests.
+# A profile-specific file replaces the whole `routes` list from application.yml: Spring
+# Boot binds a list from the highest precedence source that defines it, it does not merge
+# list elements across sources.
+spring:
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: order
+              uri: ${downstream.url}
+              predicates:
+                - Path=/orders/**
+              filters:
+                - name: authFilter
+                - name: tenantFilter
+                - AddRequestHeader=X-Gateway,mvc-extensions
+
+            - id: echo
+              uri: ${downstream.url}
+              predicates:
+                - Path=/echo/**
+              filters:
+                - name: authFilter
+                - name: jsonEnvelopeFilter

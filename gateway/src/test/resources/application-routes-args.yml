@@ -1,0 +1,25 @@
+# Routes for ParameterizedAliasTests: a hand-written alias taking per-route args, which
+# @GatewayFilterBean cannot express.
+spring:
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: strict
+              uri: ${downstream.url}
+              predicates:
+                - Path=/strict/**
+              filters:
+                - name: requireUser
+                  args:
+                    mode: strict
+
+            - id: lenient
+              uri: ${downstream.url}
+              predicates:
+                - Path=/lenient/**
+              filters:
+                - name: requireUser
+                  args:
+                    mode: lenient

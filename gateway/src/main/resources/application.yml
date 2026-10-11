@@ -1,0 +1,56 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway-mvc-extensions
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: order
+              uri: ${downstream.url:http://localhost:8081}
+              predicates:
+                - Path=/orders/**
+              # List order is execution order. @GatewayFilterBean names, hand-written aliases and
+              # the built-in shorthand notation can be mixed freely.
+              filters:
+                - name: authFilter
+                - name: tenantFilter
+                - AddRequestHeader=X-Gateway,mvc-extensions
+            - id: echo
+              uri: ${downstream.url:http://localhost:8081}
+              predicates:
+                - Path=/echo/**
+              filters:
+                - name: authFilter
+                - name: jsonEnvelopeFilter
+            # A hand-written alias instead of @GatewayFilterBean, because this filter takes a
+            # per-route argument. See GatewayArgsFilterAliases.
+            - id: public
+              uri: ${downstream.url:http://localhost:8081}
+              predicates:
+                - Path=/public/**
+              filters:
+                - name: requireUser
+                  args:
+                    mode: lenient
+
+# All default to true; see GatewayFilterProperties.
+gateway:
+  filter:
+    validate-beans: true
+    fail-on-name-collision: true
+
+logging:
+  level:
+    # Covers the framework's request trace and the filters' own lines. One entry rather than one
+    # per package so a future package move cannot silently turn the trace off.
+    com.example.gateway: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,refresh
